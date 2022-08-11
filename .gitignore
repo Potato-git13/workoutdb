@@ -1,0 +1,4 @@
+bin/
+build/
+src/__pycache__
+workoutdb.spec
