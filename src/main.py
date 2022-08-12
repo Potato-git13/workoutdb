@@ -144,7 +144,7 @@ def read_log(n):
     con = db_connect()
     
     try:
-        for entry in con.execute(f"SELECT * FROM {ent_table_name} ORDER BY date LIMIT {n}"):
+        for entry in con.execute(f"SELECT * FROM {ent_table_name} ORDER BY date DESC LIMIT {n}"):
             for category in con.execute(f"SELECT * FROM {cat_table_name} ORDER BY id"):
                 if entry[1] == category[1]:
                     print(f"{entry[0]}: {category[0]}")
