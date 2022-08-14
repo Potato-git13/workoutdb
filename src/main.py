@@ -124,8 +124,8 @@ def remove_entry(date):
 
         if (exists):
             try:
-                con.execute(f"DELETE FROM {ent_table_name} WHERE date = '{date}' LIMIT 1")
-            except Error as e:
+                con.execute(f"DELETE FROM {ent_table_name} WHERE date = '{date}' ORDER BY id LIMIT 1")
+            except sqlite3.OperationalError as e:
                 msg(e, 1)
             print(f"Deleted newest entry with date: {date} from table: {ent_table_name}")
             
