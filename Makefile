@@ -5,7 +5,7 @@ MAIN=src/main.py
 FLAGS=--onefile --distpath $(BIN) --name=$(NAME)
 
 clean:
-	rm -rf $(BIN) build/ $(NAME).spec __pycache__/
+	rm -rf $(BIN) build/ $(NAME).spec src/__pycache__/
 
 build: $(MAIN)
 	mkdir -p $(BIN)
