@@ -171,6 +171,7 @@ def read_entry(args):
                 msg(f"found category with name: {category}", 0)
                 break
         except sqlite3.OperationalError as e:
+            con.close()
             msg(e, 1)
 
         if (exists):
@@ -184,13 +185,26 @@ def read_entry(args):
                 print(f"{all_value} entry/ies refrence category: {category}")
                 con.close()
             except Error as e:
+                con.close()
                 msg(e, 1)
         else:
-            msg(f"category: {category} does no exist", 1)
             con.close()
+            msg(f"category: {category} does no exist", 1)
     # Get entries for date
     else:
-        pass
+        input_id = int(args[0])
+
+        try:
+            for entry in con.execute(f"SELECT * FROM {ent_table_name} ORDER BY entry_id"):
+                if (input_id == round(entry[0])):
+                    msg("id matched", 0)
+                    for category in con.execute(f"SELECT * FROM {cat_table_name} ORDER BY table_id"):
+                        if entry[2] == category[1]:
+                            msg("category matched", 0)
+                            print(f"{round(entry[0])}: {entry[1]}: {category[0]}")
+        except sqlite3.OperationalError as e:
+            con.close()
+            msg(e, 1)
 
 # ---------- MAIN EXECUTION ----------
 
@@ -213,7 +227,7 @@ if (options.log):
 
 if (options.read):
     msg("starting: read_entry", 0)
-    if (re.fullmatch("[0-9]{4}\\/[0-9]{2}\\/[0-9]{2}", options.read[0]) or (options.read[0] == "all" and len(options.read) == 2)):
+    if ((options.read[0].isnumeric() and len(options.read) == 1) or (options.read[0] == "all" and len(options.read) == 2)):
         msg("pattern matched", 0)
         read_entry(options.read)
     else:
