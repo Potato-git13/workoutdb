@@ -45,7 +45,7 @@ def update_categories(con):
         
         con.execute(f"""UPDATE {cat_table_name}
                         SET all_count = {all_count}
-                        WHERE id = {cat_id}""")
+                        WHERE table_id = {cat_id}""")
 
 def init(categories):
     # Create a new database
@@ -64,13 +64,13 @@ def init(categories):
     # Create tables
     try:
         con.execute(f"""CREATE TABLE {cat_table_name}
-                    (name text, id real, all_count real)""")
+                    (name text, table_id real, all_count real)""")
         msg(f"created table: {cat_table_name}", 0)
     except sqlite3.OperationalError:
         pass
     try:
         con.execute(f"""CREATE TABLE {ent_table_name}
-                    (date text, id real)""")
+                    (entry_id real, date text, table_id real)""")
         msg(f"created table: {ent_table_name}", 0)
     except sqlite3.OperationalError:
         pass
@@ -93,15 +93,21 @@ def init(categories):
 def add_entry(category):
     con = db_connect()
 
-    entry_id = None
+    table_id = None
+    entry_id = 0
     categories = []
     for entry in con.execute(f"SELECT * FROM {cat_table_name} ORDER BY name"):
         categories.append(entry[0])
         if entry[0] == category:
-            entry_id = entry[1]
+            table_id = entry[1]
     
-    if not (entry_id == None):
-        con.execute(f"INSERT INTO {ent_table_name} VALUES ('{strftime('%Y/%m/%d')}', {entry_id})")
+    for entry in con.execute(f"SELECT * FROM {ent_table_name} ORDER BY entry_id"):
+        if (entry_id == None):
+            entry_id = 0
+        entry_id += 1
+
+    if (table_id != None):
+        con.execute(f"INSERT INTO {ent_table_name} VALUES ({entry_id}, '{strftime('%Y/%m/%d')}', {table_id})")
         print(f"created an entry for category: {category} with date: {strftime('%Y/%m/%d')}")
     else:
         msg(f"category: {category} not recognized", 1)
@@ -112,22 +118,22 @@ def add_entry(category):
     con.commit()
     con.close()
 
-def remove_entry(date):
+def remove_entry(entry_id):
     con = db_connect()
 
     try:
         exists = False
-        for entries in con.execute(f"SELECT * FROM {ent_table_name} WHERE date = '{date}'"):
+        for entries in con.execute(f"SELECT * FROM {ent_table_name} WHERE entry_id = {entry_id}"):
             exists = True
-            msg(f"found entry with date: {date}", 0)
+            msg(f"found entry with id: {entry_id}", 0)
             break
 
         if (exists):
             try:
-                con.execute(f"DELETE FROM {ent_table_name} WHERE date = '{date}' ORDER BY id LIMIT 1")
+                con.execute(f"DELETE FROM {ent_table_name} WHERE entry_id = {entry_id} LIMIT 1")
             except sqlite3.OperationalError as e:
                 msg(e, 1)
-            print(f"Deleted newest entry with date: {date} from table: {ent_table_name}")
+            print(f"Deleted newest entry with id: {entry_id} from table: {ent_table_name}")
             
             update_categories(con)
             msg("updated categories", 0)
@@ -136,7 +142,7 @@ def remove_entry(date):
             con.close()
         else:
             con.close()
-            msg(f"entry with date: {date} does not exist in table: {ent_table_name}", 1)
+            msg(f"entry with id: {entry_id} does not exist in table: {ent_table_name}", 1)
     except sqlite3.OperationalError as e:
         msg(e, 1)
 
@@ -144,10 +150,10 @@ def read_log(n):
     con = db_connect()
     
     try:
-        for entry in con.execute(f"SELECT * FROM {ent_table_name} ORDER BY date DESC LIMIT {n}"):
-            for category in con.execute(f"SELECT * FROM {cat_table_name} ORDER BY id"):
-                if entry[1] == category[1]:
-                    print(f"{entry[0]}: {category[0]}")
+        for entry in con.execute(f"SELECT * FROM {ent_table_name} ORDER BY entry_id DESC LIMIT {n}"):
+            for category in con.execute(f"SELECT * FROM {cat_table_name} ORDER BY table_id"):
+                if entry[2] == category[1]:
+                    print(f"{round(entry[0])}: {entry[1]}: {category[0]}")
     except sqlite3.OperationalError as e:
         msg(e, 1)
 
@@ -169,7 +175,7 @@ def read_entry(args):
 
         if (exists):
             try: 
-                for entry in con.execute(f"SELECT * FROM {cat_table_name} ORDER BY id"):
+                for entry in con.execute(f"SELECT * FROM {cat_table_name} ORDER BY table_id"):
                     # Match the category with one of the entries by name
                     if (entry[0] == category):
                         # Get the all_count from the entry
@@ -215,8 +221,4 @@ if (options.read):
 
 if (options.remove):
     msg("starting: remove_entry", 0)
-    if (re.fullmatch("[0-9]{4}\\/[0-9]{2}\\/[0-9]{2}", options.remove)):
-        msg("date pattern matched", 0)
-        remove_entry(options.remove)
-    else:
-        msg("date pattern not matched", 1)
+    remove_entry(options.remove)
