@@ -10,7 +10,7 @@ def getOpts(args=sys.argv[1:]):
     parser.add_argument("-l", "--log", action="store", metavar="ENTRIES", help="Read N amount of entries")
     parser.add_argument("-r", "--read", nargs="+", action="store", metavar="ENTRY", help="Read a specific entry. ENTRY can be a date \"YYYY/MM/DD\" or \"all CATEGORY\"")
     parser.add_argument("-a", "--add", action="store", metavar="CATEGORY", help="Add an entry")
-    parser.add_argument("-rm", "--remove", action="store", metavar="DATE", help="Remove newest entry with date DATE")
+    parser.add_argument("-rm", "--remove", action="store", metavar="ID", help="Remove newest entry with id ID")
 
     options = parser.parse_args(args)
     return options
