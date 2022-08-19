@@ -25,7 +25,9 @@ def msg(message, mode):
         sys.exit()
 
 def db_connect():
+    # Check if the file exists
     if (exists(filepath)):
+        # Create a connection
         con = sqlite3.connect(filepath)
         msg("database connection established", 0)
     else:
@@ -34,15 +36,17 @@ def db_connect():
     return con
 
 def update_categories(con):
+    # Iterate for every category and id
     for cat_id, category in enumerate(con.execute(f"SELECT * FROM {cat_table_name} ORDER BY name")):
         all_count = 0
         try: 
+            # Increment the all counter for every entry referencing a category id
             for entry in con.execute(f"SELECT * FROM {ent_table_name} ORDER BY id"):
                 if (entry[1] == cat_id):
                     all_count += 1
         except sqlite3.OperationalError:
             pass
-        
+        # Update the category table wwith the new counter
         con.execute(f"""UPDATE {cat_table_name}
                         SET all_count = {all_count}
                         WHERE table_id = {cat_id}""")
@@ -97,15 +101,19 @@ def add_entry(category):
     entry_id = 0
     categories = []
     for entry in con.execute(f"SELECT * FROM {cat_table_name} ORDER BY name"):
+        # This will create the full list of categories on loop completion
         categories.append(entry[0])
+        # If the entry name and category name match store the table id
         if entry[0] == category:
             table_id = entry[1]
     
+    # Count up the entry id
     for entry in con.execute(f"SELECT * FROM {ent_table_name} ORDER BY entry_id"):
         if (entry_id == None):
             entry_id = 0
         entry_id += 1
 
+    # Create an entry
     if (table_id != None):
         con.execute(f"INSERT INTO {ent_table_name} VALUES ({entry_id}, '{strftime('%Y/%m/%d')}', {table_id})")
         print(f"created an entry for category: {category} with date: {strftime('%Y/%m/%d')}")
@@ -123,6 +131,7 @@ def remove_entry(entry_id):
 
     try:
         exists = False
+        # Check if an entry exists
         for entries in con.execute(f"SELECT * FROM {ent_table_name} WHERE entry_id = {entry_id}"):
             exists = True
             msg(f"found entry with id: {entry_id}", 0)
@@ -130,6 +139,7 @@ def remove_entry(entry_id):
 
         if (exists):
             try:
+                # Get 1 entry ith given id and delet it
                 con.execute(f"DELETE FROM {ent_table_name} WHERE entry_id = {entry_id} LIMIT 1")
             except sqlite3.OperationalError as e:
                 msg(e, 1)
@@ -165,6 +175,7 @@ def read_entry(args):
         all_value = 0
         category = args[1]
         exists = False
+        # Check for category existance
         try:
             for entries in con.execute(f"SELECT * FROM {cat_table_name} WHERE name = '{category}'"):
                 exists = True
